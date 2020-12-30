@@ -47,19 +47,6 @@
     <None Include="icon.png" Pack="true" Visible="false" PackagePath="" />
     <None Include="Scratchpad.fsx" />
     <Compile Include="Types.fs" />
-    <Compile Include="Domain.fs" />
-    <Compile Include="SliceSet.fs" />
-    <Compile Include="TryFind.fs" />
-    <Compile Include="ISliceData.fs" />
-    <Compile Include="Seq.fs" />
-    <Compile Include="SMap.fs" />
-    <Compile Include="SMap2.fs" />
-    <Compile Include="SMap3.fs" />
-    <Compile Include="SMap4.fs" />
-    <Compile Include="SMap5.fs" />
-    <Compile Include="UnitsOfMeasure.Types.fs" />
-    <Compile Include="UnitsOfMeasure.Domain.fs" />
-    <Compile Include="Solve.fs" />
     <None Include="paket.references" />
     <None Include="paket.template" />
   </ItemGroup>

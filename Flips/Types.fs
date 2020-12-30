@@ -14,10 +14,10 @@ type SignInsenstiveComparer () =
 /// A Boolean maps to a 0 or 1 value
 /// An Integer type can take on any discrete value between the Upper and Lower Bound (inclusive)
 /// A Continuous type can take on any value between the Upper and Lower bound (inclusive)
-type DecisionType =
+type DecisionType<'a> =
     | Boolean
-    | Integer of LowerBound:float * UpperBound:float
-    | Continuous of LowerBound:float * UpperBound:float
+    | Integer of LowerBound: 'a * UpperBound: 'a
+    | Continuous of LowerBound: 'a * UpperBound: 'a
 
 /// A Name which uniquely identifies the Decision
 type DecisionName = DecisionName of string
@@ -26,68 +26,68 @@ type DecisionName = DecisionName of string
 /// underlying solvers.
 [<NoComparison>]
 type internal ReduceAccumulator = {
-    DecisionTypes : Dictionary<DecisionName, DecisionType>
+    DecisionTypes : Dictionary<DecisionName, DecisionType<float>>
     Coefficients : Dictionary<DecisionName, List<float>>
     Offsets : List<float>
 }
 
 /// Represents a decision that must be made
-type Decision = {
+type Decision<'a> = {
     Name : DecisionName
-    Type : DecisionType
+    Type : DecisionType<'a>
 }
-with
+//with
 
-    static member (*) (decision:Decision, f:float) =
-        LinearExpression.AddDecision ((f, decision), LinearExpression.Zero)
+//    static member (*) (decision:Decision, f:float) =
+//        LinearExpression.AddDecision ((f, decision), LinearExpression.Zero)
 
-    static member (*) (f:float, decision:Decision) =
-        decision * f
+//    static member (*) (f:float, decision:Decision) =
+//        decision * f
 
-    static member (+) (decision:Decision, f:float) =
-        LinearExpression.AddDecision ((1.0, decision), LinearExpression.OfFloat f)
+//    static member (+) (decision:Decision, f:float) =
+//        LinearExpression.AddDecision ((1.0, decision), LinearExpression.OfFloat f)
 
-    static member (+) (f:float, decision:Decision) =
-        decision + f
+//    static member (+) (f:float, decision:Decision) =
+//        decision + f
 
-    static member (+) (decision:Decision, rhsDecision:Decision) =
-        (1.0 * decision) + (1.0 * rhsDecision)
+//    static member (+) (decision:Decision, rhsDecision:Decision) =
+//        (1.0 * decision) + (1.0 * rhsDecision)
 
-    static member (-) (decision:Decision, rhsDecision:Decision) =
-        decision + (-1.0 * rhsDecision)
+//    static member (-) (decision:Decision, rhsDecision:Decision) =
+//        decision + (-1.0 * rhsDecision)
 
-    static member (-) (decision:Decision, f:float) =
-        decision + (-1.0 * f)
+//    static member (-) (decision:Decision, f:float) =
+//        decision + (-1.0 * f)
 
-    static member (-) (f:float, decision:Decision) =
-        f + (-1.0 * decision)
+//    static member (-) (f:float, decision:Decision) =
+//        f + (-1.0 * decision)
 
-    static member (<==) (decision:Decision, f:float) =
-        LinearExpression.OfDecision decision <== f
+//    static member (<==) (decision:Decision, f:float) =
+//        LinearExpression.OfDecision decision <== f
 
-    static member (<==) (f:float, decision:Decision) =
-        LinearExpression.OfFloat f <== decision
+//    static member (<==) (f:float, decision:Decision) =
+//        LinearExpression.OfFloat f <== decision
 
-    static member (<==) (decision:Decision, rhsDecision:Decision) =
-        LinearExpression.OfDecision decision <== rhsDecision
+//    static member (<==) (decision:Decision, rhsDecision:Decision) =
+//        LinearExpression.OfDecision decision <== rhsDecision
 
-    static member (==) (decision:Decision, f:float) =
-        LinearExpression.OfDecision decision == f
+//    static member (==) (decision:Decision, f:float) =
+//        LinearExpression.OfDecision decision == f
 
-    static member (==) (f:float, decision:Decision) =
-        LinearExpression.OfFloat f  == decision
+//    static member (==) (f:float, decision:Decision) =
+//        LinearExpression.OfFloat f  == decision
 
-    static member (==) (decision:Decision, rhsDecision:Decision) =
-        LinearExpression.OfDecision decision == rhsDecision
+//    static member (==) (decision:Decision, rhsDecision:Decision) =
+//        LinearExpression.OfDecision decision == rhsDecision
 
-    static member (>==) (decision:Decision, f:float) =
-        LinearExpression.OfDecision decision >== f
+//    static member (>==) (decision:Decision, f:float) =
+//        LinearExpression.OfDecision decision >== f
 
-    static member (>==) (f:float, decision:Decision) =
-        LinearExpression.OfFloat f >== decision
+//    static member (>==) (f:float, decision:Decision) =
+//        LinearExpression.OfFloat f >== decision
 
-    static member (>==) (decision:Decision, rhsDecision:Decision) =
-        LinearExpression.OfDecision decision >== rhsDecision
+//    static member (>==) (decision:Decision, rhsDecision:Decision) =
+//        LinearExpression.OfDecision decision >== rhsDecision
 
 
 and 
@@ -95,7 +95,7 @@ and
     [<NoComparison>][<CustomEquality>] 
     internal ReducedLinearExpression =
     {
-        DecisionTypes : Dictionary<DecisionName, DecisionType>
+        DecisionTypes : Dictionary<DecisionName, DecisionType<float>>
         Coefficients : Dictionary<DecisionName, float>
         Offset : float
     } with
@@ -163,220 +163,221 @@ and
 
 and 
     /// Represents a linear collection of Decisions, Coefficients, and an Offset
-    [<NoComparison>][<CustomEquality>] LinearExpression =
+    //[<NoComparison>][<CustomEquality>]
+    LinearExpression<'a> =
     | Empty
-    | AddFloat of float * LinearExpression
-    | AddDecision of (float * Decision) * LinearExpression
-    | Multiply of float * LinearExpression
-    | AddLinearExpression of LinearExpression * LinearExpression
+    | AddFloat of 'a * LinearExpression<'a>
+    | AddDecision of ('a * Decision<'a>) * LinearExpression<'a>
+    | Multiply of 'a * LinearExpression<'a>
+    | AddLinearExpression of LinearExpression<'a> * LinearExpression<'a>
 
 
 
-    static member internal Reduce (expr:LinearExpression) : ReducedLinearExpression =
-        let initialState = {
-            DecisionTypes = Dictionary()
-            Coefficients = Dictionary()
-            Offsets = ResizeArray()
-        }
+    //static member internal Reduce (expr:LinearExpression) : ReducedLinearExpression =
+    //    let initialState = {
+    //        DecisionTypes = Dictionary()
+    //        Coefficients = Dictionary()
+    //        Offsets = ResizeArray()
+    //    }
 
-        let tryFind k (d:Dictionary<_,_>) =
-          match d.TryGetValue(k) with
-          | (true, v) -> Some v
-          | (false, _) -> None
+    //    let tryFind k (d:Dictionary<_,_>) =
+    //      match d.TryGetValue(k) with
+    //      | (true, v) -> Some v
+    //      | (false, _) -> None
 
-        let rec evaluateNode (multiplier:float, state:ReduceAccumulator) (node:LinearExpression) cont =
-            match node with
-            | Empty -> cont (multiplier, state)
-            | AddFloat (addToOffset, nodeExpr) -> 
-                state.Offsets.Add(multiplier * addToOffset)
-                evaluateNode (multiplier, state) nodeExpr cont
-            | AddDecision ((nodeCoef , nodeDecision), nodeExpr) ->
-                match tryFind nodeDecision.Name state.DecisionTypes with
-                | Some existingType ->
-                    if existingType <> nodeDecision.Type then
-                        invalidArg "DecisionType" "Cannot have different DecisionType for same DecisionName"
-                    else
-                        state.Coefficients.[nodeDecision.Name].Add(nodeCoef * multiplier)
-                        evaluateNode (multiplier, state) nodeExpr cont
-                | None ->
-                    let newCoefArray = ResizeArray()
-                    newCoefArray.Add(multiplier * nodeCoef)
-                    state.DecisionTypes.Add(nodeDecision.Name, nodeDecision.Type)
-                    state.Coefficients.Add(nodeDecision.Name, newCoefArray)
-                    evaluateNode (multiplier, state) nodeExpr cont
-            | Multiply (nodeMultiplier, nodeExpr) ->
-                let newMultiplier = multiplier * nodeMultiplier
-                evaluateNode (newMultiplier, state) nodeExpr cont
-            | AddLinearExpression (lExpr, rExpr) ->
-                evaluateNode (multiplier, state) lExpr (fun l -> evaluateNode l rExpr cont)
+    //    let rec evaluateNode (multiplier:float, state:ReduceAccumulator) (node:LinearExpression) cont =
+    //        match node with
+    //        | Empty -> cont (multiplier, state)
+    //        | AddFloat (addToOffset, nodeExpr) -> 
+    //            state.Offsets.Add(multiplier * addToOffset)
+    //            evaluateNode (multiplier, state) nodeExpr cont
+    //        | AddDecision ((nodeCoef , nodeDecision), nodeExpr) ->
+    //            match tryFind nodeDecision.Name state.DecisionTypes with
+    //            | Some existingType ->
+    //                if existingType <> nodeDecision.Type then
+    //                    invalidArg "DecisionType" "Cannot have different DecisionType for same DecisionName"
+    //                else
+    //                    state.Coefficients.[nodeDecision.Name].Add(nodeCoef * multiplier)
+    //                    evaluateNode (multiplier, state) nodeExpr cont
+    //            | None ->
+    //                let newCoefArray = ResizeArray()
+    //                newCoefArray.Add(multiplier * nodeCoef)
+    //                state.DecisionTypes.Add(nodeDecision.Name, nodeDecision.Type)
+    //                state.Coefficients.Add(nodeDecision.Name, newCoefArray)
+    //                evaluateNode (multiplier, state) nodeExpr cont
+    //        | Multiply (nodeMultiplier, nodeExpr) ->
+    //            let newMultiplier = multiplier * nodeMultiplier
+    //            evaluateNode (newMultiplier, state) nodeExpr cont
+    //        | AddLinearExpression (lExpr, rExpr) ->
+    //            evaluateNode (multiplier, state) lExpr (fun l -> evaluateNode l rExpr cont)
 
-        let (_,reduceResult) = evaluateNode (1.0, initialState) expr (fun x -> x)
+    //    let (_,reduceResult) = evaluateNode (1.0, initialState) expr (fun x -> x)
 
-        ReducedLinearExpression.OfReduceAccumulator reduceResult
+    //    ReducedLinearExpression.OfReduceAccumulator reduceResult
 
-    static member internal GetDecisions (expr:LinearExpression) : Set<Decision> =
+    //static member internal GetDecisions (expr:LinearExpression) : Set<Decision> =
 
-        let rec evaluateNode (decisions:Set<Decision>) (node:LinearExpression) cont : Set<Decision> =
-            match node with
-            | Empty -> cont decisions
-            | AddFloat (_, nodeExpr) -> 
-              evaluateNode decisions nodeExpr cont
-            | Multiply (_, nodeExpr) -> 
-              evaluateNode decisions nodeExpr cont
-            | AddDecision ((_, nodeDecision), nodeExpr) ->
-                let newDecisions = decisions.Add nodeDecision
-                evaluateNode newDecisions nodeExpr cont
-            | AddLinearExpression (lExpr, rExpr) ->
-                evaluateNode decisions lExpr (fun l -> evaluateNode l rExpr cont)
+    //    let rec evaluateNode (decisions:Set<Decision>) (node:LinearExpression) cont : Set<Decision> =
+    //        match node with
+    //        | Empty -> cont decisions
+    //        | AddFloat (_, nodeExpr) -> 
+    //          evaluateNode decisions nodeExpr cont
+    //        | Multiply (_, nodeExpr) -> 
+    //          evaluateNode decisions nodeExpr cont
+    //        | AddDecision ((_, nodeDecision), nodeExpr) ->
+    //            let newDecisions = decisions.Add nodeDecision
+    //            evaluateNode newDecisions nodeExpr cont
+    //        | AddLinearExpression (lExpr, rExpr) ->
+    //            evaluateNode decisions lExpr (fun l -> evaluateNode l rExpr cont)
 
-        evaluateNode (Set.empty) expr (fun x -> x)
+    //    evaluateNode (Set.empty) expr (fun x -> x)
 
-    static member internal Evaluate (decisionMap:Map<Decision, float>) (expr:LinearExpression) : float =
+    //static member internal Evaluate (decisionMap:Map<Decision, float>) (expr:LinearExpression) : float =
 
-        let rec evaluateNode (multiplier:float, state:ResizeArray<float>) (node:LinearExpression) cont =
-            match node with
-            | Empty -> cont (multiplier, state)
-            | AddFloat (f, nodeExpr) ->
-                state.Add(multiplier * f)
-                let newState = (multiplier, state) 
-                evaluateNode newState nodeExpr cont
-            | AddDecision ((nodeCoef, nodeDecision), nodeExpr) ->
-                state.Add(multiplier * nodeCoef * decisionMap.[nodeDecision])
-                let newState = (multiplier, state)
-                evaluateNode newState nodeExpr cont
-            | Multiply (nodeMultiplier, nodeExpr) ->
-                let newState = (multiplier * nodeMultiplier, state)
-                evaluateNode newState nodeExpr cont
-            | AddLinearExpression (lExpr, rExpr) ->
-                evaluateNode (multiplier, state) lExpr (fun l -> evaluateNode l rExpr cont)
+    //    let rec evaluateNode (multiplier:float, state:ResizeArray<float>) (node:LinearExpression) cont =
+    //        match node with
+    //        | Empty -> cont (multiplier, state)
+    //        | AddFloat (f, nodeExpr) ->
+    //            state.Add(multiplier * f)
+    //            let newState = (multiplier, state) 
+    //            evaluateNode newState nodeExpr cont
+    //        | AddDecision ((nodeCoef, nodeDecision), nodeExpr) ->
+    //            state.Add(multiplier * nodeCoef * decisionMap.[nodeDecision])
+    //            let newState = (multiplier, state)
+    //            evaluateNode newState nodeExpr cont
+    //        | Multiply (nodeMultiplier, nodeExpr) ->
+    //            let newState = (multiplier * nodeMultiplier, state)
+    //            evaluateNode newState nodeExpr cont
+    //        | AddLinearExpression (lExpr, rExpr) ->
+    //            evaluateNode (multiplier, state) lExpr (fun l -> evaluateNode l rExpr cont)
             
 
-        let (_,reduceResult) = evaluateNode (1.0, ResizeArray()) expr (fun x -> x)
+    //    let (_,reduceResult) = evaluateNode (1.0, ResizeArray()) expr (fun x -> x)
 
-        reduceResult.Sort(SignInsenstiveComparer())
-        let total = Seq.sum reduceResult
-        total
+    //    reduceResult.Sort(SignInsenstiveComparer())
+    //    let total = Seq.sum reduceResult
+    //    total
 
 
-    override this.GetHashCode () =
-        match this with
-        | Empty -> 0
-        | AddFloat (f, le) -> hash (f, le)
-        | AddDecision (f, d) -> hash (f, d)
-        | Multiply (f, le) -> hash (f, le)
-        | AddLinearExpression (le1, le2) -> hash (le1, le2)
+    //override this.GetHashCode () =
+    //    match this with
+    //    | Empty -> 0
+    //    | AddFloat (f, le) -> hash (f, le)
+    //    | AddDecision (f, d) -> hash (f, d)
+    //    | Multiply (f, le) -> hash (f, le)
+    //    | AddLinearExpression (le1, le2) -> hash (le1, le2)
 
-    override this.Equals(obj) =
-        match obj with
-        | :? LinearExpression as otherExpr -> 
-            let thisReduced = LinearExpression.Reduce this
-            let otherReduced = LinearExpression.Reduce otherExpr
-            thisReduced = otherReduced
-        | _ -> false
+    //override this.Equals(obj) =
+    //    match obj with
+    //    | :? LinearExpression as otherExpr -> 
+    //        let thisReduced = LinearExpression.Reduce this
+    //        let otherReduced = LinearExpression.Reduce otherExpr
+    //        thisReduced = otherReduced
+    //    | _ -> false
 
-    static member Zero =
-        LinearExpression.Empty
+    //static member Zero =
+    //    LinearExpression.Empty
 
-    static member (+) (l:LinearExpression, r:LinearExpression) =
-        LinearExpression.AddLinearExpression (l, r)
+    //static member (+) (l:LinearExpression, r:LinearExpression) =
+    //    LinearExpression.AddLinearExpression (l, r)
 
-    static member (+) (expr:LinearExpression, f:float) =
-        LinearExpression.AddFloat (f, expr)
+    //static member (+) (expr:LinearExpression, f:float) =
+    //    LinearExpression.AddFloat (f, expr)
 
-    static member (+) (f:float, expr:LinearExpression) =
-        expr + f
+    //static member (+) (f:float, expr:LinearExpression) =
+    //    expr + f
 
-    static member (+) (expr:LinearExpression, decision:Decision) =
-        LinearExpression.AddDecision ((1.0, decision), expr)
+    //static member (+) (expr:LinearExpression, decision:Decision) =
+    //    LinearExpression.AddDecision ((1.0, decision), expr)
     
-    static member (+) (decision:Decision, expr:LinearExpression) =
-        expr + decision
+    //static member (+) (decision:Decision, expr:LinearExpression) =
+    //    expr + decision
 
-    static member (*) (expr:LinearExpression, f:float) =
-        LinearExpression.Multiply (f, expr)
+    //static member (*) (expr:LinearExpression, f:float) =
+    //    LinearExpression.Multiply (f, expr)
 
-    static member (*) (f:float, expr:LinearExpression) =
-        LinearExpression.Multiply (f, expr)
+    //static member (*) (f:float, expr:LinearExpression) =
+    //    LinearExpression.Multiply (f, expr)
 
-    static member (-) (expr:LinearExpression, f:float) =
-        expr + (-1.0 * f)
+    //static member (-) (expr:LinearExpression, f:float) =
+    //    expr + (-1.0 * f)
 
-    static member (-) (f:float, expr:LinearExpression) =
-        f + (-1.0 * expr)
+    //static member (-) (f:float, expr:LinearExpression) =
+    //    f + (-1.0 * expr)
 
-    static member (-) (expr:LinearExpression, d:Decision) =
-        expr + (-1.0 * d)
+    //static member (-) (expr:LinearExpression, d:Decision) =
+    //    expr + (-1.0 * d)
 
-    static member (-) (d:Decision, expr:LinearExpression) =
-        d + (-1.0 * expr)
+    //static member (-) (d:Decision, expr:LinearExpression) =
+    //    d + (-1.0 * expr)
 
-    static member (-) (lExpr:LinearExpression, rExpr:LinearExpression) =
-        lExpr + (-1.0 * rExpr)
+    //static member (-) (lExpr:LinearExpression, rExpr:LinearExpression) =
+    //    lExpr + (-1.0 * rExpr)
 
-    static member OfFloat (f:float) =
-        LinearExpression.AddFloat(f, LinearExpression.Zero)
+    //static member OfFloat (f:float) =
+    //    LinearExpression.AddFloat(f, LinearExpression.Zero)
 
-    static member OfDecision (d:Decision) =
-        LinearExpression.AddDecision((1.0, d), LinearExpression.Zero)
+    //static member OfDecision (d:Decision) =
+    //    LinearExpression.AddDecision((1.0, d), LinearExpression.Zero)
 
-    static member (<==) (lhs:LinearExpression, rhs:float) =
-        Inequality (lhs, LessOrEqual, LinearExpression.OfFloat rhs)
+    //static member (<==) (lhs:LinearExpression, rhs:float) =
+    //    Inequality (lhs, LessOrEqual, LinearExpression.OfFloat rhs)
 
-    static member (<==) (lhs:float, rhs:LinearExpression) =
-        Inequality (LinearExpression.OfFloat lhs, LessOrEqual, rhs)
+    //static member (<==) (lhs:float, rhs:LinearExpression) =
+    //    Inequality (LinearExpression.OfFloat lhs, LessOrEqual, rhs)
 
-    static member (<==) (lhs:LinearExpression, rhs:Decision) =
-        Inequality (lhs, LessOrEqual, LinearExpression.OfDecision rhs)
+    //static member (<==) (lhs:LinearExpression, rhs:Decision) =
+    //    Inequality (lhs, LessOrEqual, LinearExpression.OfDecision rhs)
 
-    static member (<==) (decision:Decision, expr:LinearExpression) =
-        LinearExpression.OfDecision decision <== expr
+    //static member (<==) (decision:Decision, expr:LinearExpression) =
+    //    LinearExpression.OfDecision decision <== expr
 
-    static member (<==) (lhs:LinearExpression, rhs:LinearExpression) =
-        Inequality (lhs, LessOrEqual, rhs)
+    //static member (<==) (lhs:LinearExpression, rhs:LinearExpression) =
+    //    Inequality (lhs, LessOrEqual, rhs)
 
-    static member (==) (lhs:LinearExpression, rhs:float) =
-        Equality (lhs, LinearExpression.OfFloat rhs)
+    //static member (==) (lhs:LinearExpression, rhs:float) =
+    //    Equality (lhs, LinearExpression.OfFloat rhs)
 
-    static member (==) (lhs:float, rhs:LinearExpression) =
-        Equality (LinearExpression.OfFloat lhs, rhs)
+    //static member (==) (lhs:float, rhs:LinearExpression) =
+    //    Equality (LinearExpression.OfFloat lhs, rhs)
 
-    static member (==) (lhs:LinearExpression, rhs:Decision) =
-        Equality (lhs, LinearExpression.OfDecision rhs)
+    //static member (==) (lhs:LinearExpression, rhs:Decision) =
+    //    Equality (lhs, LinearExpression.OfDecision rhs)
 
-    static member (==) (decision:Decision, expr:LinearExpression) =
-        LinearExpression.OfDecision decision == expr
+    //static member (==) (decision:Decision, expr:LinearExpression) =
+    //    LinearExpression.OfDecision decision == expr
 
-    static member (==) (lhs:LinearExpression, rhs:LinearExpression) =
-        Equality (lhs, rhs)
+    //static member (==) (lhs:LinearExpression, rhs:LinearExpression) =
+    //    Equality (lhs, rhs)
 
-    static member (>==) (lhs:LinearExpression, rhs:float) =
-        Inequality (lhs, GreaterOrEqual, LinearExpression.OfFloat rhs)
+    //static member (>==) (lhs:LinearExpression, rhs:float) =
+    //    Inequality (lhs, GreaterOrEqual, LinearExpression.OfFloat rhs)
 
-    static member (>==) (lhs:float, rhs:LinearExpression) =
-        Inequality (LinearExpression.OfFloat lhs, GreaterOrEqual, rhs)
+    //static member (>==) (lhs:float, rhs:LinearExpression) =
+    //    Inequality (LinearExpression.OfFloat lhs, GreaterOrEqual, rhs)
 
-    static member (>==) (lhs:LinearExpression, rhs:Decision) =
-        Inequality (lhs, GreaterOrEqual, LinearExpression.OfDecision rhs)
+    //static member (>==) (lhs:LinearExpression, rhs:Decision) =
+    //    Inequality (lhs, GreaterOrEqual, LinearExpression.OfDecision rhs)
 
-    static member (>==) (decision:Decision, expr:LinearExpression) =
-        LinearExpression.OfDecision decision >== expr
+    //static member (>==) (decision:Decision, expr:LinearExpression) =
+    //    LinearExpression.OfDecision decision >== expr
 
-    static member (>==) (lhs:LinearExpression, rhs:LinearExpression) =
-        Inequality (lhs, GreaterOrEqual, rhs)
+    //static member (>==) (lhs:LinearExpression, rhs:LinearExpression) =
+    //    Inequality (lhs, GreaterOrEqual, rhs)
 
 
-and 
+type 
     /// Represents the type of comparison between two LinearExpression
     Inequality =
     | LessOrEqual
     | GreaterOrEqual
 
-and 
+type 
     /// The representation of how two LinearExpressions must relate to one another
     [<NoComparison>]
     ConstraintExpression = 
-    | Inequality of LHS:LinearExpression * Inequality * RHS:LinearExpression
-    | Equality of LHS:LinearExpression * RHS:LinearExpression
+    | Inequality of LHS:LinearExpression<float> * Inequality * RHS:LinearExpression<float>
+    | Equality of LHS:LinearExpression<float> * RHS:LinearExpression<float>
 
 /// A unique identified for a Constraint
 type ConstraintName = ConstraintName of string
@@ -402,12 +403,12 @@ type ObjectiveName = ObjectiveName of string
 type Objective = {
     Name : ObjectiveName
     Sense : ObjectiveSense
-    Expression : LinearExpression
+    Expression : LinearExpression<float>
 }
 
 /// The results of the optimization if it was successful
 type Solution = {
-    DecisionResults : Map<Decision,float>
+    DecisionResults : Map<Decision<float> ,float>
     [<Obsolete("Please use the Objective.evaluate function instead")>]
     ObjectiveResult : float
 }
