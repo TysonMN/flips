@@ -36,29 +36,29 @@ type Decision<'a> = {
     Name : DecisionName
     Type : DecisionType<'a>
 }
-with
+//with
 
-    static member MultiplyDecisionWithScalar (decision: Decision<'s>, f: 's) =
-        AddDecision ((f, decision), Empty)
+//    static member MultiplyDecisionWithScalar (decision: Decision<'s>, f: 's) =
+//        AddDecision ((f, decision), Empty)
 
-    static member inline (*) (decision: Decision<'s>, f: 's) =
-        Decision<_>.MultiplyDecisionWithScalar(decision, f)
+//    static member inline (*) (decision: Decision<'s>, f: 's) =
+//        Decision<_>.MultiplyDecisionWithScalar(decision, f)
 
-    static member inline (*) (f: 's, decision:Decision<'s>) : LinearExpression<'s> =
-        Decision<_>.MultiplyDecisionWithScalar(decision, f)
+//    static member inline (*) (f: 's, decision:Decision<'s>) : LinearExpression<'s> =
+//        Decision<_>.MultiplyDecisionWithScalar(decision, f)
 
-    static member inline AddDecisionWithScalar (decision:Decision<'s>, f:'s) =
-        LinearExpression.AddDecision ((LanguagePrimitives.GenericOne, decision), AddScalar(f, Empty))
+//    static member inline AddDecisionWithScalar (decision:Decision<'s>, f:'s) =
+//        LinearExpression.AddDecision ((LanguagePrimitives.GenericOne, decision), AddScalar(f, Empty))
 
-    static member inline (+) (decision:Decision<'s>, f:'s) =
-        Decision<_>.AddDecisionWithScalar(decision, f)
+//    static member inline (+) (decision:Decision<'s>, f:'s) =
+//        Decision<_>.AddDecisionWithScalar(decision, f)
 
-    static member inline (+) (f: 's, decision: Decision<'s>) =
-        Decision<_>.AddDecisionWithScalar(decision, f)
+//    static member inline (+) (f: 's, decision: Decision<'s>) =
+//        Decision<_>.AddDecisionWithScalar(decision, f)
 
-    static member inline (+) (decision: Decision<'t>, rhsDecision: Decision<'t>) =
-        let one = LanguagePrimitives.GenericOne
-        (one * decision) + (one * rhsDecision)
+    //static member inline (+) (decision: Decision<'t>, rhsDecision: Decision<'t>) =
+    //    let one = LanguagePrimitives.GenericOne
+    //    (one * decision) + (one * rhsDecision)
 
 //    static member (-) (decision:Decision, rhsDecision:Decision) =
 //        decision + (-1.0 * rhsDecision)
@@ -168,7 +168,7 @@ and
         }
         
 
-and 
+type 
     /// Represents a linear collection of Decisions, Coefficients, and an Offset
     //[<NoComparison>][<CustomEquality>]
     LinearExpression<'a> =
@@ -179,7 +179,7 @@ and
     | AddLinearExpression of LinearExpression<'a> * LinearExpression<'a>
 
 
-    with
+    //with
 
 
 
@@ -285,12 +285,12 @@ and
     //        thisReduced = otherReduced
     //    | _ -> false
 
-    static member inline AddLinearExpressionMember(l: LinearExpression<'s>, r:LinearExpression<'s>) : LinearExpression<'s> =
-        LinearExpression<'s>.AddLinearExpression(l, r)
+    //static member inline AddLinearExpressionMember(l: LinearExpression<'s>, r:LinearExpression<'s>) : LinearExpression<'s> =
+    //    LinearExpression<'s>.AddLinearExpression(l, r)
 
-    static member (+) (l: LinearExpression<'t>, r:LinearExpression<'t>) : LinearExpression<'t> =
-        let x = LinearExpression<'t>.AddLinearExpressionMember(l, r)
-        x
+    //static member (+) (l: LinearExpression<'t>, r:LinearExpression<'t>) : LinearExpression<'t> =
+    //    let x = LinearExpression<'t>.AddLinearExpressionMember(l, r)
+    //    x
         
     //static member (+) (expr:LinearExpression, f:float) =
     //    LinearExpression.AddFloat (f, expr)
@@ -375,6 +375,52 @@ and
 
     //static member (>==) (lhs:LinearExpression, rhs:LinearExpression) =
     //    Inequality (lhs, GreaterOrEqual, rhs)
+
+module DecisionOperators =
+
+    let multiplyDecisionWithScalar (decision: Decision<'s>, f: 's) =
+        AddDecision ((f, decision), Empty)
+
+open DecisionOperators
+
+
+[<AutoOpen>]
+module Decision =
+  
+      let inline (*) (decision: Decision<'s>, f: 's) =
+          multiplyDecisionWithScalar(decision, f)
+  
+      let inline (*) (f: 's, decision:Decision<'s>) : LinearExpression<'s> =
+          multiplyDecisionWithScalar(decision, f)
+  
+      let inline AddDecisionWithScalar (decision:Decision<'s>, f:'s) =
+          AddDecision ((LanguagePrimitives.GenericOne, decision), AddScalar(f, Empty))
+  
+      let inline (+) (decision:Decision<'s>, f:'s) =
+          AddDecisionWithScalar(decision, f)
+  
+      let inline (+) (f: 's, decision: Decision<'s>) =
+          AddDecisionWithScalar(decision, f)
+
+      let inline (+) (decision: Decision<'t>, rhsDecision: Decision<'t>) =
+          let one = LanguagePrimitives.GenericOne
+          (one * decision) + (one * rhsDecision)
+
+
+module Tyson =
+
+    let decision = { Name = DecisionName ""; Type = DecisionType<float>.Boolean }
+    let x = Decision.(*)(1.0, decision)
+
+[<AutoOpen>]
+type LinearExpression =
+      
+      static member inline AddLinearExpressionMember(l: LinearExpression<'s>, r:LinearExpression<'s>) : LinearExpression<'s> =
+          LinearExpression<'s>.AddLinearExpression(l, r)
+      
+      static member (+) (l: LinearExpression<'t>, r:LinearExpression<'t>) : LinearExpression<'t> =
+          LinearExpression.AddLinearExpressionMember(l, r)
+
 
 
 module LinearExpression =
