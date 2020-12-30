@@ -36,22 +36,29 @@ type Decision<'a> = {
     Name : DecisionName
     Type : DecisionType<'a>
 }
-//with
+with
 
-//    static member (*) (decision:Decision, f:float) =
-//        LinearExpression.AddDecision ((f, decision), LinearExpression.Zero)
+    static member MultiplyDecisionWithScalar (decision: Decision<'s>, f: 's) =
+        AddDecision ((f, decision), Empty)
 
-//    static member (*) (f:float, decision:Decision) =
-//        decision * f
+    static member inline (*) (decision: Decision<'s>, f: 's) =
+        Decision<_>.MultiplyDecisionWithScalar(decision, f)
 
-//    static member (+) (decision:Decision, f:float) =
-//        LinearExpression.AddDecision ((1.0, decision), LinearExpression.OfFloat f)
+    static member inline (*) (f: 's, decision:Decision<'s>) : LinearExpression<'s> =
+        Decision<_>.MultiplyDecisionWithScalar(decision, f)
 
-//    static member (+) (f:float, decision:Decision) =
-//        decision + f
+    static member inline AddDecisionWithScalar (decision:Decision<'s>, f:'s) =
+        LinearExpression.AddDecision ((LanguagePrimitives.GenericOne, decision), AddScalar(f, Empty))
 
-//    static member (+) (decision:Decision, rhsDecision:Decision) =
-//        (1.0 * decision) + (1.0 * rhsDecision)
+    static member inline (+) (decision:Decision<'s>, f:'s) =
+        Decision<_>.AddDecisionWithScalar(decision, f)
+
+    static member inline (+) (f: 's, decision: Decision<'s>) =
+        Decision<_>.AddDecisionWithScalar(decision, f)
+
+    static member inline (+) (decision: Decision<'t>, rhsDecision: Decision<'t>) =
+        let one = LanguagePrimitives.GenericOne
+        (one * decision) + (one * rhsDecision)
 
 //    static member (-) (decision:Decision, rhsDecision:Decision) =
 //        decision + (-1.0 * rhsDecision)
@@ -166,10 +173,13 @@ and
     //[<NoComparison>][<CustomEquality>]
     LinearExpression<'a> =
     | Empty
-    | AddFloat of 'a * LinearExpression<'a>
+    | AddScalar of 'a * LinearExpression<'a>
     | AddDecision of ('a * Decision<'a>) * LinearExpression<'a>
     | Multiply of 'a * LinearExpression<'a>
     | AddLinearExpression of LinearExpression<'a> * LinearExpression<'a>
+
+
+    with
 
 
 
@@ -275,12 +285,13 @@ and
     //        thisReduced = otherReduced
     //    | _ -> false
 
-    //static member Zero =
-    //    LinearExpression.Empty
+    static member inline AddLinearExpressionMember(l: LinearExpression<'s>, r:LinearExpression<'s>) : LinearExpression<'s> =
+        LinearExpression<'s>.AddLinearExpression(l, r)
 
-    //static member (+) (l:LinearExpression, r:LinearExpression) =
-    //    LinearExpression.AddLinearExpression (l, r)
-
+    static member (+) (l: LinearExpression<'t>, r:LinearExpression<'t>) : LinearExpression<'t> =
+        let x = LinearExpression<'t>.AddLinearExpressionMember(l, r)
+        x
+        
     //static member (+) (expr:LinearExpression, f:float) =
     //    LinearExpression.AddFloat (f, expr)
 
@@ -364,6 +375,11 @@ and
 
     //static member (>==) (lhs:LinearExpression, rhs:LinearExpression) =
     //    Inequality (lhs, GreaterOrEqual, rhs)
+
+
+module LinearExpression =
+
+    let Zero = LinearExpression<_>.Empty
 
 
 type 
